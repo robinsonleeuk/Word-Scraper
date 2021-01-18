@@ -1,28 +1,5 @@
 from wordscraper import *
 
-# # Import various modules to store the results in dataframes and time the procedure
-# import os
-# import re
-# import shutil
-
-# # Import os modules
-# from os import listdir
-# from os.path import isfile, join
-# from time import process_time
-
-# # Openpyxl
-# from openpyxl import load_workbook
-# from openpyxl.workbook import Workbook
-
-# # PDF miner
-# from pdfminer.converter import PDFPageAggregator
-# from pdfminer.layout import LAParams, LTTextBox, LTTextLine
-# from pdfminer.pdfdevice import PDFDevice
-# from pdfminer.pdfdocument import PDFDocument
-# from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
-# from pdfminer.pdfpage import PDFPage, PDFTextExtractionNotAllowed
-# from pdfminer.pdfparser import PDFParser
-
 
 def create_pdf_list(input_dir):
     # Makes a list of the filenames + extensions for all files in a directory
