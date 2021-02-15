@@ -1,22 +1,36 @@
 from wordscraper import *
 
 
-def page_search(txtfile, searchwords, page_num, stop_words=[]):
-    # Opens a txt file and searches it for keywords, ignoring stopwords.
+def page_search(
+    txtfile,
+    searchwords,
+    searchword_patterns,
+    searchsentence_patterns,
+    page_num,
+    stop_words=[],
+):
+    # Opens a txt file and searches it for search words, ignoring stopwords.
     # It returns a nested dictionary with the searchwords as outer keys,
-    # the page number as inner keys, and lists of sentences as the inner values
+    # the page number as inner keys, and lists of sentences containing the search words as the inner values
+
+    # It take as arguments txtfile, which is the txt to be searched, a list of searchwords, regex patterns of these searchwords: a) the word itself surrounded by word boundaries, b) the sentence sontaining the word, the page number (for use in the dictionary) and stopwords
 
     # First, match the case of the searchwords and the text file. Then see if any
     # searchwords exist in the text.
-    re_searchwords = [re.compile(r"\b" + w + r"\b", re.IGNORECASE) for w in searchwords]
 
+    # Make a list of searchword patterns - the words not within other words (i.e. words with word boundaries)
+    # re_searchwords = [re.compile(r"\b" + w + r"\b", re.IGNORECASE) for w in searchwords]
+
+    # Open the txtfile
     try:
         text = open(txtfile, "r", encoding="utf8").read()
     except:
         text = open(txtfile, "r", encoding="ISO-8859-1").read()
+
+    # COunt the matches of the searchword patterns
     number_searchwords = 0
 
-    for pattern in re_searchwords:
+    for pattern in searchword_patterns:
         matches = pattern.findall(text)
         number_searchwords += len(matches)
 
@@ -28,21 +42,23 @@ def page_search(txtfile, searchwords, page_num, stop_words=[]):
     for searchword in searchwords:
         page_sentences[searchword] = {page_key: []}
 
-    # If none of the searchwords are present, return a dictionary with empty keys
+    # If none of the searchword patterns are present, return a dictionary with empty keys
     if not searchwords_present:
         return page_sentences
     # Otherwise the remainder of code will run and extract sentences containing searchwords
 
     # # Convert the text to lower case
     low_text = text.lower().strip()
-    low_text = re.sub(r"\([^)]*\)", "", low_text)
-    low_text = re.sub(r"\-", "", low_text)
+    # low_text = re.sub(r"\([^)]*\)", "", low_text) # Strip out any terms in parenthesis
+
+    # Remove hyphens - replace with space
+    low_text = re.sub(r"\-", " ", low_text)
 
     # Temporarily replace stopwords with placeholders
-    swl = [sw.lower() for sw in stop_words]
-    phw = ["plhwd{0}".format(i) for i in range(len(swl))]
-    for i in range(len(swl)):
-        low_text = low_text.replace(swl[i], phw[i])
+    stopwords_lower = [sw.lower() for sw in stop_words]
+    placeholder_words = ["plhwd{0}".format(i) for i in range(len(stopwords_lower))]
+    for i in range(len(stopwords_lower)):
+        low_text = low_text.replace(stopwords_lower[i], placeholder_words[i])
 
     for searchword in searchwords:
         low_text = low_text.replace(searchword, searchword.upper())
@@ -51,15 +67,19 @@ def page_search(txtfile, searchwords, page_num, stop_words=[]):
     for searchword in searchwords:
         low_text = low_text.replace(searchword.lower(), searchword.upper())
 
-    re_sentences = [
-        re.compile(r"[^.]*\b" + w + r"\b[^.]*\.", re.IGNORECASE) for w in searchwords
-    ]
+    # Make patterns for each searchword - the full sentence containing the searchword
+    # any number of non period characters and word boundary before and after the word
+    # searchsentence_patterns = [
+    #     re.compile(r"[^.]*\b" + w + r"\b[^.]*\.", re.IGNORECASE) for w in searchwords
+    # ]
 
     for i in range(len(searchwords)):
-        matches = re_sentences[i].findall(low_text)
+        matches = searchsentence_patterns[i].findall(low_text)
         for j in range(len(matches)):
-            for k in range(len(phw)):
-                matches[j] = matches[j].replace(phw[k], swl[k])
+            for k in range(len(placeholder_words)):
+                matches[j] = matches[j].replace(
+                    placeholder_words[k], stopwords_lower[k]
+                )
 
         if len(matches) > 0:
             page_sentences[searchwords[i]][page_key] = matches
@@ -67,7 +87,9 @@ def page_search(txtfile, searchwords, page_num, stop_words=[]):
     return page_sentences
 
 
-def doc_search(dir_path, searchwords, stop_words=[]):
+def doc_search(
+    dir_path, searchwords, searchword_patterns, searchsentence_patterns, stop_words=[]
+):
     # Searches for the sentences containing keywords in all of the txt files
     # in a given directory. Returns a nested dictionary with the searchwords as outer keys,
     # the page number as inner keys, and lists of sentences as the inner values
@@ -91,7 +113,12 @@ def doc_search(dir_path, searchwords, stop_words=[]):
         txtfile = dir_path + filenames[page_nums.index(page_num)]
         page_key = page_keys[page_nums.index(page_num)]
         page_dictionary = page_search(
-            txtfile, searchwords, page_num, stop_words=stop_words
+            txtfile=txtfile,
+            searchwords=searchwords,
+            searchword_patterns=searchword_patterns,
+            searchsentence_patterns=searchsentence_patterns,
+            page_num=page_num,
+            stop_words=stop_words,
         )
         for searchword, value in page_dictionary.items():
             page_list = value[page_key]
@@ -123,6 +150,34 @@ def delete_paragraph(paragraph):
     p._p = p._element = None
 
 
+def write_doc_test(
+    input_dir, results_dir, searchwords, stop_words=[], project_name="Results"
+):
+    # Writes the sentences containing keywords to an existing a word document
+    # with a Level 1 header for the doc name, Level 2 for each searchword
+    # and level 3 for each page that has sentences containing it
+
+    # Construct the string for the filename + time and its filepath
+    now = datetime.now()
+    dt_string = now.strftime("%Y%m%d_%H%M")
+    project_filename = project_name + "_" + dt_string + ".docx"
+    filepath = results_dir + project_filename
+
+    # Create a list of the txtfile folders from their parent dir
+    subdir_list = [x[0] for x in os.walk(input_dir)]
+
+    subdir_list.remove(input_dir)
+
+    filename_list = [x.replace(input_dir, "") for x in subdir_list]
+    # print(subdir_list)
+    subdir_list = [x + "\\" for x in subdir_list]
+    # print(subdir_list)
+    # Reverse it so newer docs get done first
+    print(subdir_list)
+    subdir_list = subdir_list[::-1]  # .reverse()
+    print(subdir_list)
+
+
 def write_doc(
     input_dir, results_dir, searchwords, stop_words=[], project_name="Results"
 ):
@@ -142,19 +197,37 @@ def write_doc(
     filename_list = [x.replace(input_dir, "") for x in subdir_list]
     subdir_list = [x + "\\" for x in subdir_list]
     # Reverse it so newer docs get done first
-    subdir_list = subdir_list.reverse()
+    subdir_list = subdir_list[::-1]
 
     # Create the document and write its title
     document = Document()
     p = document.add_paragraph("Searchword Results")
     p.style = document.styles["Title"]
 
+    # Make regex patterns of searchwords for the doc and page search functions.
+    # A list of patterns - just the words surrounded by word boundaries
+    searchword_patterns = [
+        re.compile(r"\b" + w + r"\b", re.IGNORECASE) for w in searchwords
+    ]
+
+    # a list of patterns - the sentences containing the words
+    searchsentence_patterns = [
+        re.compile(r"[^.]*\b" + w + r"\b[^.]*\.", re.IGNORECASE) for w in searchwords
+    ]
+
     # For each txtfile folder, create a wordsearch dictionary, a header in the word doc
     # for the filename, subheaders for searchwords, and text for the sentences
+
     for subdir in subdir_list:
         total_searchwords_count = 0
         # print("\n", subdir)
-        txtfile_dict = doc_search(subdir, searchwords, stop_words)
+        txtfile_dict = doc_search(
+            dir_path=subdir,
+            searchwords=searchwords,
+            searchword_patterns=searchword_patterns,
+            searchsentence_patterns=searchsentence_patterns,
+            stop_words=stop_words,
+        )
         filename = filename_list[subdir_list.index(subdir)]
         filename_para = document.add_paragraph(filename)
         filename_para.style = document.styles["Heading 1"]

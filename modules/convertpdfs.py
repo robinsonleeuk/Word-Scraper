@@ -76,7 +76,9 @@ def convert_pdfminer(filename, input_dir, output_dir, password="", cleancycles=1
     interpreter = PDFPageInterpreter(rsrcmgr, device)
 
     # Ok now that we have everything to process a pdf document, lets process it page by page
-    iter = 0
+    page_num = 0
+
+    # for page in pages_list:
     for page in PDFPage.create_pages(document):
         extracted_text = ""
 
@@ -97,10 +99,10 @@ def convert_pdfminer(filename, input_dir, output_dir, password="", cleancycles=1
             extracted_text = extracted_text.replace("  ", " ")
             j += 1
 
-        if iter < 9:
-            txtfile_num = "0" + str(iter + 1)
+        if page_num < 9:
+            txtfile_num = "0" + str(page_num + 1)
         else:
-            txtfile_num = str(iter + 1)
+            txtfile_num = str(page_num + 1)
 
         log_file = thisfile_output_dir + "page_" + txtfile_num + ".txt"
         # Delete old versions
@@ -110,12 +112,12 @@ def convert_pdfminer(filename, input_dir, output_dir, password="", cleancycles=1
         with open(log_file, "wb") as my_log:
             my_log.write(extracted_text.encode("utf-8"))
 
-        iter += 1
+        page_num += 1
 
         proc_time_end = process_time()
 
     proc_time_total = proc_time_end - proc_time_start
-    return proc_time_total
+    return proc_time_total, page_num
 
 
 def create_txt_files(input_dir, output_dir, results_dir, password="", cleancycles=10):
@@ -141,6 +143,8 @@ def create_txt_files(input_dir, output_dir, results_dir, password="", cleancycle
 
     ws["A1"] = "File"
     ws["B1"] = "Time"
+    ws["C1"] = "Pages"
+    ws["D1"] = "Time Per Page"
 
     # Create a dictionary to keep track of time to convert each pdf and total time
     time_dict = dict.fromkeys(pdf_names)
@@ -163,7 +167,7 @@ def create_txt_files(input_dir, output_dir, results_dir, password="", cleancycle
         # row += 1
         ws["A" + str(row)] = pdf_name
         try:
-            pdf_time = convert_pdfminer(
+            pdf_time, page_nums = convert_pdfminer(
                 filename=pdf,
                 input_dir=input_dir,
                 output_dir=output_dir,
@@ -174,10 +178,14 @@ def create_txt_files(input_dir, output_dir, results_dir, password="", cleancycle
             print(pdf_name + " not processed")
             continue
         time_dict[pdf_name] = pdf_time
-        ws["B" + str(row)] = pdf_time
+        ws["B" + str(row)] = round(pdf_time, 2)
+        ws["C" + str(row)] = page_nums
+        ws["D" + str(row)] = round(pdf_time / page_nums, 3)
         wb.save(results_dir + "Processing Times.xlsx")
         row += 1
         print("Done " + pdf_name + ", Time: " + str(pdf_time))
+        # print("Pages: ", end="")
+        # print(page_nums)
 
     # # Record the total time
     total_time_end = process_time()
