@@ -42,21 +42,23 @@ stop_words = [
     "Investment Environment",
 ]
 
-
 # create_txt_files(input_dir=pdf_dir, output_dir=txt_dir, results_dir=results_dir)
 
+
+dir_spellcheck(input_dir=txt_dir, results_dir=results_dir)
+
 # write_doc(
+#     input_dir=txt_dir,
+#     results_dir=results_dir,
+#     searchwords=searchwords,
+#     # stop_words=stop_words,
+#     project_name=project_name,
+# )
+
+# entries_in_dir(
 #     input_dir=txt_dir,
 #     results_dir=results_dir,
 #     searchwords=searchwords,
 #     stop_words=stop_words,
 #     project_name=project_name,
 # )
-
-entries_in_dir(
-    input_dir=txt_dir,
-    results_dir=results_dir,
-    searchwords=searchwords,
-    stop_words=stop_words,
-    project_name=project_name,
-)
