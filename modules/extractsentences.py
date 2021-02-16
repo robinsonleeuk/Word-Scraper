@@ -15,11 +15,12 @@ def page_search(
 
     # It take as arguments txtfile, which is the txt to be searched, a list of searchwords, regex patterns of these searchwords: a) the word itself surrounded by word boundaries, b) the sentence sontaining the word, the page number (for use in the dictionary) and stopwords
 
-    # First, match the case of the searchwords and the text file. Then see if any
-    # searchwords exist in the text.
+    # Set criteria for ignoring a page______________________________________________________________________________________________
 
-    # Make a list of searchword patterns - the words not within other words (i.e. words with word boundaries)
-    # re_searchwords = [re.compile(r"\b" + w + r"\b", re.IGNORECASE) for w in searchwords]
+    # Set variables, ignore_page, which is false by default, Becomes true if page is annex, glossary, etc
+    # end_doc is triggered when the first words on a page indicate the procedure is finished with the doc (e.g. annex)
+    ignore_page = False
+    end_doc = False
 
     # Open the txtfile
     try:
@@ -27,7 +28,29 @@ def page_search(
     except:
         text = open(txtfile, "r", encoding="ISO-8859-1").read()
 
-    # COunt the matches of the searchword patterns
+    # Take first hundred words to check for ignore or stop criteria
+    first_hundred_list = text.split()[0:100]
+    first_hundred_string = " ".join(first_hundred_list)
+
+    # check if they contain 'Annex'
+    annex_pattern = re.compile(r"^annex[:]*", re.IGNORECASE)
+    annex_match = re.search(annex_pattern, first_hundred_string)
+
+    if annex_match:
+        ignore_page = True
+        end_doc = True
+
+    # Check if they are table of contents
+    contents_pattern = re.compile(r"^contents", re.IGNORECASE)
+    contents_match = re.search(annex_pattern, first_hundred_string)
+
+    if contents_match:
+        ignore_page = True
+
+    # match the case of the searchwords and the text file. Then see if any
+    # searchwords exist in the text.____________________________________________________________________________________
+
+    # Count the matches of the searchword patterns
     number_searchwords = 0
 
     for pattern in searchword_patterns:
@@ -43,11 +66,20 @@ def page_search(
         page_sentences[searchword] = {page_key: []}
 
     # If none of the searchword patterns are present, return a dictionary with empty keys
-    if not searchwords_present:
-        return page_sentences
+    if not searchwords_present or ignore_page == True:
+        return page_sentences, ignore_page, end_doc
+
     # Otherwise the remainder of code will run and extract sentences containing searchwords
 
-    # # Convert the text to lower case
+    # Extract a list of potentially misspelled words____________________________________________________________________
+    spell = SpellChecker()
+    text_list = text.split()
+    for word in text:
+        print(spell.correction(word))
+
+    # Make conversions - lower case, temporarily removing stopwords, strippig hyphens___________________________________
+
+    # Convert the text to lower case
     low_text = text.lower().strip()
     # low_text = re.sub(r"\([^)]*\)", "", low_text) # Strip out any terms in parenthesis
 
@@ -67,12 +99,7 @@ def page_search(
     for searchword in searchwords:
         low_text = low_text.replace(searchword.lower(), searchword.upper())
 
-    # Make patterns for each searchword - the full sentence containing the searchword
-    # any number of non period characters and word boundary before and after the word
-    # searchsentence_patterns = [
-    #     re.compile(r"[^.]*\b" + w + r"\b[^.]*\.", re.IGNORECASE) for w in searchwords
-    # ]
-
+    # Add searched sentences to the dictionary _________________________________________________________________________
     for i in range(len(searchwords)):
         matches = searchsentence_patterns[i].findall(low_text)
         for j in range(len(matches)):
@@ -84,7 +111,7 @@ def page_search(
         if len(matches) > 0:
             page_sentences[searchwords[i]][page_key] = matches
 
-    return page_sentences
+    return page_sentences, ignore_page, end_doc
 
 
 def doc_search(
@@ -112,7 +139,7 @@ def doc_search(
     for page_num in page_nums:
         txtfile = dir_path + filenames[page_nums.index(page_num)]
         page_key = page_keys[page_nums.index(page_num)]
-        page_dictionary = page_search(
+        page_dictionary, ignore_page, end_doc = page_search_test(
             txtfile=txtfile,
             searchwords=searchwords,
             searchword_patterns=searchword_patterns,
@@ -120,14 +147,26 @@ def doc_search(
             page_num=page_num,
             stop_words=stop_words,
         )
+
+        # If the page was one that triggers a document -end event, finish the procedure and return the dictionary
+        if end_doc == True:
+            # print("page_", end="")
+            # print(page_num, end="")
+            # print(" ended procedure")
+            return doc_sentences
+
+        # If the page was one that should be ignored (annex, glossary), do not include it - move to next loop
+        if ignore_page == True:
+            # print("page_", end="")
+            # print(page_num, end="")
+            # print(" ignored")
+            continue
+
         for searchword, value in page_dictionary.items():
             page_list = value[page_key]
             if len(page_list) != 0:
                 doc_sentences[searchword][page_key] = page_list
                 doc_sentences[searchword]["Total"] += len(page_list)
-
-                # for sentence in list:
-                #     doc_sentences[searchword]["Total"] += 1
 
     # Create a list of searchwords with no results
     keys_to_delete = []
