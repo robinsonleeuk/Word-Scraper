@@ -9,3 +9,4 @@ modules/__pycache__/extractsentences.cpython-37.pyc
 modules/__pycache__/wordcounter.cpython-37.pyc
 rough.py
 *.docx
+run_from_here.py
