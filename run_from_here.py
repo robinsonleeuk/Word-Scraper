@@ -6,27 +6,29 @@ project_dir, pdf_dir, txt_dir, results_dir = directories(project_name)
 
 searchwords = [
     "Global warming",
-    "Environment",
+    r"Environment[a-zA-Z*]",  # to capture environmental,
     "Climate",
     "Carbon",
-    "Carbon pricing",
-    "Carbon price",
+    r"Carbon pric[a-zA-Z*]",  # pricing, prices, price
     "Man Made",
-    "Man-Made",
     "Anthropogenic",
     "Weather",
-    "Destabilisation",
-    "Destabilization",
+    r"Destabili[sz]ation",
     "Extreme events",
-    "Environmental destruction",
     "Sea level",
     "Greenhouse",
     "Ozone",
     "CO2",
     "ETS",
-    "Emissions Trading System",
-    "Renewable",
+    r"Emissions Trading System[s]*",
+    r"Emissions Trading scheme[s]*",
+    r"Renewable[s]*",
     "Solar Power",
+    "sequestration",
+    r"emission[s*]",
+    "climate finance",
+    r"carbon tax[a-zA-Z*]",  # tax, taxes, taxing
+    r"border tax[a-zA-Z*]",
 ]
 
 stop_words = [
@@ -41,7 +43,7 @@ stop_words = [
 ]
 
 
-create_txt_files(input_dir=pdf_dir, output_dir=txt_dir, results_dir=results_dir)
+# create_txt_files(input_dir=pdf_dir, output_dir=txt_dir, results_dir=results_dir)
 
 # write_doc(
 #     input_dir=txt_dir,
@@ -51,10 +53,10 @@ create_txt_files(input_dir=pdf_dir, output_dir=txt_dir, results_dir=results_dir)
 #     project_name=project_name,
 # )
 
-# entries_in_dir(
-#     input_dir=txt_dir,
-#     results_dir=results_dir,
-#     searchwords=searchwords,
-#     stop_words=stop_words,
-#     project_name=project_name,
-# )
+entries_in_dir(
+    input_dir=txt_dir,
+    results_dir=results_dir,
+    searchwords=searchwords,
+    stop_words=stop_words,
+    project_name=project_name,
+)
