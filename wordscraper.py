@@ -39,4 +39,5 @@ from modules.convertpdfs import *
 from modules.directories import *
 from modules.extractsentences import *
 from modules.functions import *
+from modules.spellcheck import *
 from modules.wordcounter import *
