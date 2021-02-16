@@ -150,34 +150,6 @@ def delete_paragraph(paragraph):
     p._p = p._element = None
 
 
-def write_doc_test(
-    input_dir, results_dir, searchwords, stop_words=[], project_name="Results"
-):
-    # Writes the sentences containing keywords to an existing a word document
-    # with a Level 1 header for the doc name, Level 2 for each searchword
-    # and level 3 for each page that has sentences containing it
-
-    # Construct the string for the filename + time and its filepath
-    now = datetime.now()
-    dt_string = now.strftime("%Y%m%d_%H%M")
-    project_filename = project_name + "_" + dt_string + ".docx"
-    filepath = results_dir + project_filename
-
-    # Create a list of the txtfile folders from their parent dir
-    subdir_list = [x[0] for x in os.walk(input_dir)]
-
-    subdir_list.remove(input_dir)
-
-    filename_list = [x.replace(input_dir, "") for x in subdir_list]
-    # print(subdir_list)
-    subdir_list = [x + "\\" for x in subdir_list]
-    # print(subdir_list)
-    # Reverse it so newer docs get done first
-    print(subdir_list)
-    subdir_list = subdir_list[::-1]  # .reverse()
-    print(subdir_list)
-
-
 def write_doc(
     input_dir, results_dir, searchwords, stop_words=[], project_name="Results"
 ):
