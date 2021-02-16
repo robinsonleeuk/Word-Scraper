@@ -42,7 +42,7 @@ def page_search(
 
     # Check if they are table of contents
     contents_pattern = re.compile(r"^contents", re.IGNORECASE)
-    contents_match = re.search(annex_pattern, first_hundred_string)
+    contents_match = re.search(contents_pattern, first_hundred_string)
 
     if contents_match:
         ignore_page = True
@@ -70,13 +70,6 @@ def page_search(
         return page_sentences, ignore_page, end_doc
 
     # Otherwise the remainder of code will run and extract sentences containing searchwords
-
-    # Extract a list of potentially misspelled words____________________________________________________________________
-    spell = SpellChecker()
-    text_list = text.split()
-    for word in text:
-        print(spell.correction(word))
-
     # Make conversions - lower case, temporarily removing stopwords, strippig hyphens___________________________________
 
     # Convert the text to lower case
@@ -139,7 +132,7 @@ def doc_search(
     for page_num in page_nums:
         txtfile = dir_path + filenames[page_nums.index(page_num)]
         page_key = page_keys[page_nums.index(page_num)]
-        page_dictionary, ignore_page, end_doc = page_search_test(
+        page_dictionary, ignore_page, end_doc = page_search(
             txtfile=txtfile,
             searchwords=searchwords,
             searchword_patterns=searchword_patterns,
