@@ -126,9 +126,20 @@ def delete_paragraph(paragraph):
     p._p = p._element = None
 
 
-def make_master_spelling_list(input_dir):
+def make_master_spelling_list(input_dir, results_dir):
 
     master_list = []
+
+    # Construct the string for the filename + time and its filepath
+    now = datetime.now()
+    dt_string = now.strftime("%Y%m%d_%H%M")
+    project_filename = "Spelling Errors_" + dt_string + ".docx"
+    filepath = results_dir + project_filename
+
+    # Create the document and write its title
+    document = Document()
+    p = document.add_paragraph("Spellcheck Results")
+    p.style = document.styles["Title"]
 
     # Create a list of the txtfile folders from their parent dir
     subdir_list = [x[0] for x in os.walk(input_dir)]
@@ -138,16 +149,31 @@ def make_master_spelling_list(input_dir):
     # Reverse it so newer docs get done first
     subdir_list = subdir_list[::-1]
 
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Spellerrors"
+
     time_start = process_time()
     for subdir in subdir_list:
         filename = filename_list[subdir_list.index(subdir)]
         misspelled_dict, doc_list = doc_spellcheck(dir_path=subdir)
         [master_list.append(x) for x in doc_list if x not in master_list]
+
+        "Add the list to the document"
+        mispelled_word_para = ", ".join(master_list)
+        try:
+            p = document.add_paragraph(mispelled_word_para)
+        except:
+            p = document.add_paragraph(
+                "<<Unable to add this paragraph - format conversion error>>"
+            )
+        p.style = document.styles["Normal"]
+        document.save(filepath)
+
         time_end = process_time()
         doc_time = time_end - time_start
         print("Done " + filename + ", Time: " + str(doc_time))
         time_start = process_time()
-        # print(master_list)
 
     end_list = [x for x in master_list if x]
     print(end_list)
