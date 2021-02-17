@@ -2,6 +2,11 @@ from wordscraper import *
 
 
 def page_spellcheck(txtfile):
+
+    # Load the lists from lists module: spellchecks to ignore and text replacements to make
+    global spellcheck_ignore
+    global text_replacements
+
     # Opens a txt file and searches it for misspelled words
 
     ignore_page = False
@@ -18,8 +23,8 @@ def page_spellcheck(txtfile):
     # Make the text lower case for fewer case conflicts
     low_text = text.lower()
 
-    # Strip out hyphens
-    low_text = low_text.replace("-", " ").replace("–", "")
+    for correction in text_replacements:
+        low_text = low_text.replace(correction[0], correction[1])
 
     # Take first hundred words to check for ignore or stop criteria
     first_hundred_list = low_text.split()[0:100]
@@ -50,7 +55,11 @@ def page_spellcheck(txtfile):
     # Extract a list of potentially misspelled words____________________________________________________________________
     spell = SpellChecker()
 
+    spell = SpellChecker()
+    spell.word_frequency.load_words(spellcheck_ignore)
+
     text_list = low_text.split()
+
     for i in range(len(text_list)):
         text_list[i] = (
             text_list[i]
@@ -62,9 +71,13 @@ def page_spellcheck(txtfile):
             .replace("-", " ")
             .replace("–", "")
             .replace("'s", "s")
+            .replace("’s", "s")
         )
 
-    misspelled = spell.unknown(text_list)
+    misspelled_with_dupes = spell.unknown(text_list)
+
+    misspelled = []
+    [misspelled.append(x) for x in misspelled_with_dupes if x not in misspelled]
 
     return misspelled, ignore_page, end_doc
 
@@ -80,42 +93,28 @@ def doc_spellcheck(dir_path):
 
     # Initialize the dictionary that will store results, with 0 totals of each word
     misspelled_dict = {}
+    doc_list = []
 
-    # Iterate through the txtfiles in the dir by pagenumber creating wordcount dictionaries
-    # for that page then adding results to the parent document dictionary
-    for page_num in page_nums:
-        txtfile = dir_path + filenames[page_nums.index(page_num)]
-        page_key = page_keys[page_nums.index(page_num)]
+    # Iterate through the txtfiles in the dir by pagenumber creating page number keys in the dictionary
+    # for each page then adding a list of misspelled words as the value to that key
+    for page_key in page_keys:
+        txtfile = dir_path + filenames[page_keys.index(page_key)]
         misspelled_words, ignore_page, end_doc = page_spellcheck(txtfile)
+
+        [doc_list.append(x) for x in misspelled_words if x not in doc_list]
 
         # If the page was one that triggers a document -end event, finish the procedure and return the dictionary
         if end_doc == True:
-            # print("page_", end="")
-            # print(page_num, end="")
-            # print(" ended procedure")
-            return misspelled_dict
+            return misspelled_dict, doc_list
 
         # If the page was one that should be ignored (annex, glossary), do not include it - move to next loop
         if ignore_page == True:
-            # print("page_", end="")
-            # print(page_num, end="")
-            # print(" ignored")
             misspelled_words = []
 
         if len(misspelled_words) != 0:
             misspelled_dict[page_key] = misspelled_words
 
-    # Create a list of searchwords with no results
-    keys_to_delete = []
-    for page_key in page_keys:
-        if len(misspelled_dict[page_key]) == 0:
-            keys_to_delete.append(page_key)
-
-    # Delete the searchwords with no results from the dictionary
-    for key in keys_to_delete:
-        del misspelled_dict[key]
-
-    return misspelled_dict
+    return misspelled_dict, doc_list
 
 
 def delete_paragraph(paragraph):
@@ -130,6 +129,8 @@ def dir_spellcheck(input_dir, results_dir):
     # Writes the sentences containing keywords to an existing a word document
     # with a Level 1 header for the doc name, Level 2 for each searchword
     # and level 3 for each page that has sentences containing it
+
+    master_list = []
 
     # Construct the string for the filename + time and its filepath
     now = datetime.now()
@@ -151,13 +152,17 @@ def dir_spellcheck(input_dir, results_dir):
     p.style = document.styles["Title"]
 
     for subdir in subdir_list:
-        misspelled_dict = doc_spellcheck(dir_path=subdir)
+        misspelled_dict, doc_list = doc_spellcheck(dir_path=subdir)
+        [master_list.append(x) for x in doc_list if x not in master_list]
+
         filename = filename_list[subdir_list.index(subdir)]
         filename_para = document.add_paragraph(filename)
         filename_para.style = document.styles["Heading 1"]
 
         # Report the search results
         for page_key, results in misspelled_dict.items():
+            if results == []:
+                continue
             searchword_header = page_key
             p = document.add_paragraph(searchword_header)
             p.style = document.styles["Heading 2"]
@@ -171,5 +176,6 @@ def dir_spellcheck(input_dir, results_dir):
                 )
             p.style = document.styles["Normal"]
 
+    print(master_list)
     document.save(filepath)
     print("Sentences Extracted to " + project_filename + " in results folder")

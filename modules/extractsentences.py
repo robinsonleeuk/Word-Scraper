@@ -15,7 +15,10 @@ def page_search(
 
     # It take as arguments txtfile, which is the txt to be searched, a list of searchwords, regex patterns of these searchwords: a) the word itself surrounded by word boundaries, b) the sentence sontaining the word, the page number (for use in the dictionary) and stopwords
 
-    # Set criteria for ignoring a page______________________________________________________________________________________________
+    # Load the lists from lists module: spellchecks to ignore and text replacements to make_____________________________
+    global text_replacements    
+
+    # Set criteria for ignoring a page__________________________________________________________________________________
 
     # Set variables, ignore_page, which is false by default, Becomes true if page is annex, glossary, etc
     # end_doc is triggered when the first words on a page indicate the procedure is finished with the doc (e.g. annex)
@@ -76,8 +79,9 @@ def page_search(
     low_text = text.lower().strip()
     # low_text = re.sub(r"\([^)]*\)", "", low_text) # Strip out any terms in parenthesis
 
-    # Remove hyphens - replace with space
-    low_text = re.sub(r"\-", " ", low_text)
+    # Remove punctutation that stops word boundary recognition
+    for correction in text_replacements:
+        low_text = low_text.replace(correction[0], correction[1])
 
     # Temporarily replace stopwords with placeholders
     stopwords_lower = [sw.lower() for sw in stop_words]
