@@ -83,7 +83,7 @@ def entries_in_dir(
     filename_list = [x.replace(input_dir, "") for x in subdir_list]
     subdir_list = [x + "\\" for x in subdir_list]
     # Reverse it so newer docs get done first
-    subdir_list = subdir_list.reverse()
+    subdir_list = subdir_list[::-1]
 
     # Make regex patterns of searchwords for the doc and page search functions.
     # A list of patterns - just the words surrounded by word boundaries

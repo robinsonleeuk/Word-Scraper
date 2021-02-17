@@ -97,6 +97,7 @@ def doc_spellcheck(dir_path):
 
     # Iterate through the txtfiles in the dir by pagenumber creating page number keys in the dictionary
     # for each page then adding a list of misspelled words as the value to that key
+
     for page_key in page_keys:
         txtfile = dir_path + filenames[page_keys.index(page_key)]
         misspelled_words, ignore_page, end_doc = page_spellcheck(txtfile)
@@ -123,6 +124,33 @@ def delete_paragraph(paragraph):
     p = paragraph._element
     p.getparent().remove(p)
     p._p = p._element = None
+
+
+def make_master_spelling_list(input_dir):
+
+    master_list = []
+
+    # Create a list of the txtfile folders from their parent dir
+    subdir_list = [x[0] for x in os.walk(input_dir)]
+    subdir_list.remove(input_dir)
+    filename_list = [x.replace(input_dir, "") for x in subdir_list]
+    subdir_list = [x + "\\" for x in subdir_list]
+    # Reverse it so newer docs get done first
+    subdir_list = subdir_list[::-1]
+
+    time_start = process_time()
+    for subdir in subdir_list:
+        filename = filename_list[subdir_list.index(subdir)]
+        misspelled_dict, doc_list = doc_spellcheck(dir_path=subdir)
+        [master_list.append(x) for x in doc_list if x not in master_list]
+        time_end = process_time()
+        doc_time = time_end - time_start
+        print("Done " + filename + ", Time: " + str(doc_time))
+        time_start = process_time()
+        # print(master_list)
+
+    end_list = [x for x in master_list if x]
+    print(end_list)
 
 
 def dir_spellcheck(input_dir, results_dir):

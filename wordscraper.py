@@ -12,6 +12,7 @@ import docx
 import pandas as pd
 from docx import Document
 from docx.text.paragraph import Paragraph
+from gensim.parsing.preprocessing import remove_stopwords
 from openpyxl import load_workbook
 from openpyxl.styles import (
     Alignment,

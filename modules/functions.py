@@ -114,3 +114,22 @@ def range_border(ws, cell_range, bstyle="thin"):
                 col.border = Border(top=Side(style=bstyle))
             for col in rows[-1][1:-1]:
                 col.border = Border(bottom=Side(style=bstyle))
+
+
+def col2num(col_str):
+    """ Convert base26 column string to number. """
+    expn = 0
+    col_num = 0
+    for char in reversed(col_str):
+        col_num += (ord(char) - ord("A") + 1) * (26 ** expn)
+        expn += 1
+
+    return col_num
+
+
+def colnum_string(n):
+    string = ""
+    while n > 0:
+        n, remainder = divmod(n - 1, 26)
+        string = chr(65 + remainder) + string
+    return string
