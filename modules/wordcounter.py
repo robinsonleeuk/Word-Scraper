@@ -1,14 +1,13 @@
 from wordscraper import *
 
 
-def entries_on_page(txtfile, searchwords, stop_words=[]):
+def entries_on_page(txtfile, searchwords, searchword_patterns, stop_words=[]):
     # Opens a txt file and searches it for keywords, ignoring stopwords.
     # It returns a dictionary with the searchwords as keys and their
     # count as values
 
-    # First, match the case of the searchwords and the text file. Then see if any
-    # searchwords exist in the text.
-    re_searchwords = [re.compile(r"\b" + w + r"\b", re.IGNORECASE) for w in searchwords]
+    # Load the lists from lists module: spellchecks to ignore and text replacements to make_____________________________
+    global text_replacements
 
     # Open the text file - try different encoding formats
     try:
@@ -18,25 +17,29 @@ def entries_on_page(txtfile, searchwords, stop_words=[]):
 
     # Convert the text to lower case
     text = text.lower().strip()
-    low = re.sub(r"\([^)]*\)", "", text)
+    # low = re.sub(r"\([^)]*\)", "", text)
+
+    # Remove punctutation that stops word boundary recognition
+    for correction in text_replacements:
+        low_text = low_text.replace(correction[0], correction[1])
 
     # Remove the stopwords
-    sw_low = [sw.lower() for sw in stop_words]
-    for sw in sw_low:
-        text = text.replace(sw, "")
+    stopword_low = [stopword.lower() for stopword in stop_words]
+    for stopword in stopword_low:
+        text = text.replace(stopword, "")
 
     # Initialise the dictionary and populate it with wordcounts
     count_dict = {}
 
     for searchword in searchwords:
-        pattern = re_searchwords[searchwords.index(searchword)]
+        pattern = searchword_patterns[searchwords.index(searchword)]
         matches = pattern.findall(text)
         count_dict[searchword] = len(matches)
 
     return count_dict
 
 
-def entries_in_doc(input_dir, searchwords, stop_words=[]):
+def entries_in_doc(input_dir, searchwords, searchword_patterns, stop_words=[]):
     # Takes an input directory, assumed filled with single page text files, and
     # returns a dictionary with Filename, page count, and count of each search term
 
@@ -49,7 +52,12 @@ def entries_in_doc(input_dir, searchwords, stop_words=[]):
     doc_count_dict = {"Document": doc_name, "Pages": len(filenames)}
     for filename in filenames:
         filepath = input_dir + "\\" + filename
-        pagecount_dict = entries_on_page(filepath, searchwords, stop_words)
+        pagecount_dict = entries_on_page(
+            txtfile=filepath,
+            searchwords=searchwords,
+            searchword_patterns=searchword_patterns,
+            stop_words=stop_words,
+        )
         for searchword in searchwords:
             if searchword not in doc_count_dict:
                 doc_count_dict[searchword] = pagecount_dict[searchword]
@@ -77,6 +85,12 @@ def entries_in_dir(
     # Reverse it so newer docs get done first
     subdir_list = subdir_list.reverse()
 
+    # Make regex patterns of searchwords for the doc and page search functions.
+    # A list of patterns - just the words surrounded by word boundaries
+    searchword_patterns = [
+        re.compile(r"\b" + w + r"\b", re.IGNORECASE) for w in searchwords
+    ]
+
     dir_dict = {"Document": [], "Pages": []}
     for searchword in searchwords:
         dir_dict[searchword] = []
@@ -84,7 +98,12 @@ def entries_in_dir(
     # print(dir_count_dict)
     for subdir in subdir_list:
         filename = filename_list[subdir_list.index(subdir)]
-        doc_dict = entries_in_doc(subdir, searchwords, stop_words)
+        doc_dict = entries_in_doc(
+            input_dir=subdir,
+            searchwords=searchwords,
+            searchword_patterns=searchword_patterns,
+            stop_words=stop_words,
+        )
         for key, value in doc_dict.items():
             dir_dict[key].append(value)
 
@@ -111,18 +130,6 @@ def entries_in_dir(
     ws.insert_rows(1)
     ws.insert_cols(1)
 
-    # # Format the header
-    # highlight = NamedStyle(name="highlight")
-    # highlight.font = Font(bold=True, color="FFFFFF")
-    # bd = Side(style="thick", color="000000")
-    # highlight.border = Border(left=bd, top=bd, right=bd, bottom=bd)
-    # highlight.fill = PatternFill("solid", fgColor="808080")
-
-    # count = 0
-    # for col in ws.iter_cols(min_col=2, min_row=2, max_col=6, max_row=2):
-    #     col[count].style = highlight
-    #     count += 1
-
     lastcol = chr(num_searchwords + 67)
 
     header1 = "B2:C2"
@@ -134,14 +141,6 @@ def entries_in_dir(
     range_border(ws, body2, bstyle="thin")
     range_border(ws, header1, bstyle="thin")
     range_border(ws, header2, bstyle="thin")
-
-    # header1 = [ws.cell(row=2, column=i).value for i in range(2, 3)]
-
-    # # cells = ws["B2":"C2"]
-    # header1.font = Font(color="FF0000", size=20, italic=True)
-    # header1.value = "Merged Cell"
-    # header1.alignment = Alignment(horizontal="right", vertical="bottom")
-    # header1.fill = GradientFill(stop=("000000", "FFFFFF"))  # 6 color hexadecimal system
 
     # Format column widths and wrap text
     ws.column_dimensions["B"].width = 70
