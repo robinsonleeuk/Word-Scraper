@@ -9,6 +9,8 @@ def entries_on_page(txtfile, searchwords, searchword_patterns, stop_words=[]):
     # Load the lists from lists module: spellchecks to ignore and text replacements to make_____________________________
     global text_replacements
 
+    global reported_searchwords
+
     # Open the text file - try different encoding formats
     try:
         text = open(txtfile, "r", encoding="utf8").read()
@@ -21,7 +23,11 @@ def entries_on_page(txtfile, searchwords, searchword_patterns, stop_words=[]):
 
     # Remove punctutation that stops word boundary recognition
     for correction in text_replacements:
-        low_text = low_text.replace(correction[0], correction[1])
+        text = text.replace(correction[0], correction[1])
+
+    text = remove_stopwords(text)
+
+    wordcount = len(text.split())
 
     # Remove the stopwords
     stopword_low = [stopword.lower() for stopword in stop_words]
@@ -31,10 +37,13 @@ def entries_on_page(txtfile, searchwords, searchword_patterns, stop_words=[]):
     # Initialise the dictionary and populate it with wordcounts
     count_dict = {}
 
+    count_dict["Wordcount"] = wordcount
+
     for searchword in searchwords:
+        reported_searchword = reported_searchwords[searchwords.index(searchword)]
         pattern = searchword_patterns[searchwords.index(searchword)]
         matches = pattern.findall(text)
-        count_dict[searchword] = len(matches)
+        count_dict[reported_searchword] = len(matches)
 
     return count_dict
 
@@ -48,8 +57,10 @@ def entries_in_doc(input_dir, searchwords, searchword_patterns, stop_words=[]):
     doc_name = path.name
     filenames = [f for f in listdir(input_dir) if isfile(join(input_dir, f))]
 
+    global reported_searchwords
+
     # Initialise the dictionary and populate it with page counts
-    doc_count_dict = {"Document": doc_name, "Pages": len(filenames)}
+    doc_count_dict = {"Document": doc_name, "Pages": len(filenames), "Wordcount": 0}
     for filename in filenames:
         filepath = input_dir + "\\" + filename
         pagecount_dict = entries_on_page(
@@ -58,11 +69,16 @@ def entries_in_doc(input_dir, searchwords, searchword_patterns, stop_words=[]):
             searchword_patterns=searchword_patterns,
             stop_words=stop_words,
         )
-        for searchword in searchwords:
-            if searchword not in doc_count_dict:
-                doc_count_dict[searchword] = pagecount_dict[searchword]
+        doc_count_dict["Wordcount"] += pagecount_dict["Wordcount"]
+        for reported_searchword in reported_searchwords:
+            if reported_searchword not in doc_count_dict:
+                doc_count_dict[reported_searchword] = pagecount_dict[
+                    reported_searchword
+                ]
             else:
-                doc_count_dict[searchword] += pagecount_dict[searchword]
+                doc_count_dict[reported_searchword] += pagecount_dict[
+                    reported_searchword
+                ]
 
     return doc_count_dict
 
@@ -70,6 +86,8 @@ def entries_in_doc(input_dir, searchwords, searchword_patterns, stop_words=[]):
 def entries_in_dir(
     input_dir, results_dir, searchwords, stop_words=[], project_name="Results"
 ):
+
+    global reported_searchwords
 
     # Construct the string for the filename + time and its filepath
     now = datetime.now()
@@ -91,9 +109,9 @@ def entries_in_dir(
         re.compile(r"\b" + w + r"\b", re.IGNORECASE) for w in searchwords
     ]
 
-    dir_dict = {"Document": [], "Pages": []}
-    for searchword in searchwords:
-        dir_dict[searchword] = []
+    dir_dict = {"Document": [], "Pages": [], "Wordcount": []}
+    for reported_searchword in reported_searchwords:
+        dir_dict[reported_searchword] = []
 
     # print(dir_count_dict)
     for subdir in subdir_list:
@@ -130,12 +148,12 @@ def entries_in_dir(
     ws.insert_rows(1)
     ws.insert_cols(1)
 
-    lastcol = chr(num_searchwords + 67)
+    lastcol = colnum_string(num_searchwords + 3)
 
-    header1 = "B2:C2"
-    header2 = "D2:" + lastcol + "2"
-    body1 = "B2:C" + str(num_docs + 2)
-    body2 = "D2:" + lastcol + str(num_docs + 2)
+    header1 = "B2:D2"
+    header2 = "E2:" + lastcol + "2"
+    body1 = "B2:D" + str(num_docs + 2)
+    body2 = "E2:" + lastcol + str(num_docs + 2)
 
     range_border(ws, body1, bstyle="thin")
     range_border(ws, body2, bstyle="thin")
