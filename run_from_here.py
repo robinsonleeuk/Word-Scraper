@@ -4,48 +4,22 @@ project_name = "UNGA and G20"
 
 project_dir, pdf_dir, txt_dir, results_dir = directories(project_name)
 
-searchwords = [
-    "Global warming",
-    r"Environment[a-zA-Z*]",  # to capture environmental,
-    "Climate",
-    "Carbon",
-    r"Carbon pric[a-zA-Z*]",  # pricing, prices, price
-    "Man Made",
-    "Anthropogenic",
-    "Weather",
-    r"Destabili[sz]ation",
-    "Extreme events",
-    "Sea level",
-    "Greenhouse",
-    "Ozone",
-    "CO2",
-    "ETS",
-    r"Emissions Trading System[s]*",
-    r"Emissions Trading scheme[s]*",
-    r"Renewable[s]*",
-    "Solar Power",
-    "sequestration",
-    r"emission[s*]",
-    "climate finance",
-    r"carbon tax[a-zA-Z*]",  # tax, taxes, taxing
-    r"border tax[a-zA-Z*]",
-]
-
-stop_words = [
-    "Business Climate",
-    "Political Climate",
-    "Investment Climate",
-    "Transparent Climate",
-    "Business Environment",
-    "Political Environment",
-    "Transparent Environment",
-    "Investment Environment",
-]
+global searchwords
+global stop_words
 
 # create_txt_files(input_dir=pdf_dir, output_dir=txt_dir, results_dir=results_dir)
+txt_dir = "C:\\Users\\Lee\\Documents\\Python\\Projects\\Tools\\Word Scraper\\TXT Files\\UNGA and G20\\"
 
+txtfile = "C:\\Users\\Lee\\Documents\\Python\\Projects\\Tools\\Word Scraper\\TXT Files\\Test Project\\G20 2019 Leaders Declaration\\page_01.txt"
 
 dir_spellcheck(input_dir=txt_dir, results_dir=results_dir)
+
+# misspelled, ignore_page, end_doc = page_spellcheck(txtfile)
+# print(misspelled)
+
+# page_spellcheck(txtfile)
+
+# print(spellcheck_ignore)
 
 # write_doc(
 #     input_dir=txt_dir,

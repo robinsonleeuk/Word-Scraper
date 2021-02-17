@@ -1,0 +1,2 @@
+
+page_spellcheck(txtfile)
