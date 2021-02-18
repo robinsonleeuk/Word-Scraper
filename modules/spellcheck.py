@@ -23,8 +23,14 @@ def page_spellcheck(txtfile):
     # Make the text lower case for fewer case conflicts
     low_text = text.lower()
 
-    for correction in text_replacements:
-        low_text = low_text.replace(correction[0], correction[1])
+    low_text = text_fixer(low_text)
+
+    # # Replace / remove problem punctuation
+    # for correction in text_replacements:
+    #     low_text = low_text.replace(correction[0], correction[1])
+
+    # # Add spaces between words and adjacent numbers
+    # low_text = re.sub(r"([0-9]+(\.[0-9]+)?)",r" \1 ", low_text).strip()
 
     # Take first hundred words to check for ignore or stop criteria
     first_hundred_list = low_text.split()[0:100]
@@ -158,24 +164,22 @@ def make_master_spelling_list(input_dir, results_dir):
         filename = filename_list[subdir_list.index(subdir)]
         misspelled_dict, doc_list = doc_spellcheck(dir_path=subdir)
         [master_list.append(x) for x in doc_list if x not in master_list]
-
-        "Add the list to the document"
-        mispelled_word_para = ", ".join(master_list)
-        try:
-            p = document.add_paragraph(mispelled_word_para)
-        except:
-            p = document.add_paragraph(
-                "<<Unable to add this paragraph - format conversion error>>"
-            )
-        p.style = document.styles["Normal"]
-        document.save(filepath)
-
         time_end = process_time()
         doc_time = time_end - time_start
         print("Done " + filename + ", Time: " + str(doc_time))
         time_start = process_time()
 
     end_list = [x for x in master_list if x]
+    "Add the list to the document"
+    mispelled_word_para = ", ".join(end_list)
+    try:
+        p = document.add_paragraph(mispelled_word_para)
+    except:
+        p = document.add_paragraph(
+            "<<Unable to add this paragraph - format conversion error>>"
+        )
+    p.style = document.styles["Normal"]
+    document.save(filepath)
     print(end_list)
 
 

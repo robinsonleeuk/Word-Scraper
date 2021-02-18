@@ -21,9 +21,12 @@ def entries_on_page(txtfile, searchwords, searchword_patterns, stop_words=[]):
     text = text.lower().strip()
     # low = re.sub(r"\([^)]*\)", "", text)
 
-    # Remove punctutation that stops word boundary recognition
-    for correction in text_replacements:
-        text = text.replace(correction[0], correction[1])
+    # Clean the text up - remove problem punctuation and enspace numbers adjacent to letters
+    text = text_fixer(text)
+
+    # # Remove punctutation that stops word boundary recognition
+    # for correction in text_replacements:
+    #     text = text.replace(correction[0], correction[1])
 
     text = remove_stopwords(text)
 

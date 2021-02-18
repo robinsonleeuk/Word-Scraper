@@ -17,27 +17,6 @@ def regex_checker(searchwords):
         print("Searchword is pattern? ", end="")
         print(type(searchword) is re.Pattern)
         print()
-        # print("Searchword is string? ",end='')
-        # print(type(searchword) is str)
-
-        # if type(searchword) is str:
-        #     print(searchword, end="")
-        #     print(" = String")
-        # elif type(searchword) == "re.Pattern":
-        #     print(searchword, end="")
-        #     print(" = Pattern")
-        # else:
-        #     print("Neither")
-        #     print(type(searchword))
-
-    # re_searchwords = [re.compile(r"\b" + w + r"\b", re.IGNORECASE) for w in searchwords]
-
-    # for i in range(len(searchwords)):
-    #     print("Searchword: ", end="")
-    #     print(searchwords[i], end=", ")
-    #     print("Regex: ", end="")
-    #     print(re_searchwords[i])
-    #     print(type(searchwords[i]), type(re_searchwords[i]))
 
 
 def range_border(ws, cell_range, bstyle="thin"):
@@ -133,3 +112,33 @@ def colnum_string(n):
         n, remainder = divmod(n - 1, 26)
         string = chr(65 + remainder) + string
     return string
+
+
+text_replacements = [
+    ("-", " "),
+    (":", " :"),
+    ("´", ""),
+    ("“", ""),
+    ("/", " / "),
+    ("‘", ""),
+    ("%", " %"),
+    ("’", ""),
+    ("‐", " "),
+    ("”", ""),
+    ("g 20", "g20"),
+    ("  ", " "),
+]
+
+
+def text_fixer(text):
+    # Takes some text and applies a series of transformations to make it readable - strips out problem punctuation,
+    # puts spaces between adjacenet letters and numbers, removes hyphens
+
+    global text_replacements
+
+    text = re.sub(r"([0-9]+(\.[0-9]+)?)", r" \1 ", text).strip()
+
+    for correction in text_replacements:
+        text = text.replace(correction[0], correction[1])
+
+    return text
