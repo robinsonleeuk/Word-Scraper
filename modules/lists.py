@@ -29,16 +29,16 @@ searchwords = [
 
 reported_searchwords = [
     "Global warming",
-    "Environment",  # to capture environmental,
+    "Environment",  
     "Climate",
     "Carbon",
-    "Carbon price",  # pricing, prices, price
+    "Carbon Price",  
     "Man Made",
     "Anthropogenic",
     "Weather",
     "Destabilisation",
-    "Extreme events",
-    "Sea level",
+    "Extreme Events",
+    "Sea Level",
     "Greenhouse",
     "Ozone",
     "CO2",
@@ -47,11 +47,11 @@ reported_searchwords = [
     "Emissions Trading scheme",
     "Renewable",
     "Solar Power",
-    "sequestration",
-    "emission",
-    "climate finance",
-    "carbon tax",  # tax, taxes, taxing
-    "border tax",
+    "Sequestration",
+    "Emission",
+    "Climate Finance",
+    "Carbon Tax",  
+    "Border Tax",
 ]
 
 
