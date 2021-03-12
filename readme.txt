@@ -6,10 +6,10 @@ Created by Lee Robinson
 
 2. Within that folder, create another folder with your project's name
 
-3. In the Dashboard script, type in your project's name
+3. In the Dashboard script, type in your project's name: project_name = "<your_project_name>"
 
 Conversion____
-4. Run the 'create_txt_files' function with the default arguments: create_txt_files(input_dir=pdf_dir, output_dir=txt_dir, results_dir=results_dir). This converts the PDFs to the txt files
+4. Run the 'create_txt_files' function with the default arguments: create_txt_files(input_dir=pdf_dir, output_dir=txt_dir, results_dir=results_dir). This converts the PDFs to the txt files so they can be analysed
 
 Analysis_____
 5a. Specify the list of searchwords to count and stopwords to ignore (ignore sentences containing these, unless they also contain the searchwords). use regex in the searchwords if needed.
