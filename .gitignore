@@ -14,3 +14,5 @@ run_from_here.py
 rough_2.py
 modules/__pycache__/
 run_from_here.py
+*.ipynb
+

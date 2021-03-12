@@ -1,5 +1,7 @@
 from wordscraper import *
 
+from modules.functions import *
+
 
 def page_search(
     txtfile,

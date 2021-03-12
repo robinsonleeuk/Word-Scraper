@@ -21,19 +21,13 @@ def page_spellcheck(txtfile):
         text = open(txtfile, "r", encoding="ISO-8859-1").read()
 
     # Make the text lower case for fewer case conflicts
-    low_text = text.lower()
+    # low_text = text.lower()
+    # low_text = text_fixer(low_text)
 
-    low_text = text_fixer(low_text)
-
-    # # Replace / remove problem punctuation
-    # for correction in text_replacements:
-    #     low_text = low_text.replace(correction[0], correction[1])
-
-    # # Add spaces between words and adjacent numbers
-    # low_text = re.sub(r"([0-9]+(\.[0-9]+)?)",r" \1 ", low_text).strip()
+    text = text_fixer(text)
 
     # Take first hundred words to check for ignore or stop criteria
-    first_hundred_list = low_text.split()[0:100]
+    first_hundred_list = text.split()[0:100]
     first_hundred_string = " ".join(first_hundred_list)
 
     # check if they contain 'Annex' and end docuemnt search if so
@@ -60,30 +54,39 @@ def page_spellcheck(txtfile):
 
     # Extract a list of potentially misspelled words____________________________________________________________________
     spell = SpellChecker()
-
-    spell = SpellChecker()
     spell.word_frequency.load_words(spellcheck_ignore)
 
-    text_list = low_text.split()
+    text_list = text.split()
 
     for i in range(len(text_list)):
         text_list[i] = (
             text_list[i]
-            .replace(",", "")
-            .replace(".", "")
-            .replace(";", "")
-            .replace("(", "")
-            .replace(")", "")
+            .replace(",", " ")
+            .replace(".", " ")
+            .replace(";", " ")
+            .replace("(", " ")
+            .replace(")", " ")
             .replace("-", " ")
-            .replace("–", "")
+            .replace("–", " ")
             .replace("'s", "s")
             .replace("’s", "s")
+            .replace("  ", " ")
         )
+        text_list[i] = text_list[i].strip()
 
     misspelled_with_dupes = spell.unknown(text_list)
 
+    single_length = []
+    for item in misspelled_with_dupes:
+        if len(item) == 1:
+            single_length.append(item)
+
     misspelled = []
-    [misspelled.append(x) for x in misspelled_with_dupes if x not in misspelled]
+    [
+        misspelled.append(x)
+        for x in misspelled_with_dupes
+        if x not in misspelled and x not in single_length
+    ]
 
     return misspelled, ignore_page, end_doc
 
@@ -108,7 +111,7 @@ def doc_spellcheck(dir_path):
         txtfile = dir_path + filenames[page_keys.index(page_key)]
         misspelled_words, ignore_page, end_doc = page_spellcheck(txtfile)
 
-        [doc_list.append(x) for x in misspelled_words if x not in doc_list]
+        [doc_list.append(x) for x in misspelled_words if x and x not in doc_list]
 
         # If the page was one that triggers a document -end event, finish the procedure and return the dictionary
         if end_doc == True:
@@ -139,7 +142,7 @@ def make_master_spelling_list(input_dir, results_dir):
     # Construct the string for the filename + time and its filepath
     now = datetime.now()
     dt_string = now.strftime("%Y%m%d_%H%M")
-    project_filename = "Spelling Errors_" + dt_string + ".docx"
+    project_filename = "Iterating Spelling Errors_" + dt_string + ".docx"
     filepath = results_dir + project_filename
 
     # Create the document and write its title
@@ -155,19 +158,47 @@ def make_master_spelling_list(input_dir, results_dir):
     # Reverse it so newer docs get done first
     subdir_list = subdir_list[::-1]
 
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Spellerrors"
-
     time_start = process_time()
     for subdir in subdir_list:
         filename = filename_list[subdir_list.index(subdir)]
         misspelled_dict, doc_list = doc_spellcheck(dir_path=subdir)
         [master_list.append(x) for x in doc_list if x not in master_list]
+
+        filename_para = document.add_paragraph(filename)
+        filename_para.style = document.styles["Heading 1"]
+
+        # Report the search results
+        for page_key, results in misspelled_dict.items():
+            if results == []:
+                continue
+            p = document.add_paragraph(page_key)
+            p.style = document.styles["Heading 2"]
+
+            mispelled_word_para = ", ".join(results)
+            try:
+                p = document.add_paragraph(mispelled_word_para)
+            except:
+                p = document.add_paragraph(
+                    "<<Unable to add this paragraph - format conversion error>>"
+                )
+            p.style = document.styles["Normal"]
+
+        document.save(filepath)
         time_end = process_time()
         doc_time = time_end - time_start
         print("Done " + filename + ", Time: " + str(doc_time))
         time_start = process_time()
+
+    # Construct the string for the filename + time and its filepath
+    now = datetime.now()
+    dt_string = now.strftime("%Y%m%d_%H%M")
+    project_filename = "Final Spelling Errors_" + dt_string + ".docx"
+    filepath = results_dir + project_filename
+
+    # Create the document and write its title
+    document = Document()
+    p = document.add_paragraph("Spellcheck Results")
+    p.style = document.styles["Title"]
 
     end_list = [x for x in master_list if x]
     "Add the list to the document"
@@ -180,60 +211,5 @@ def make_master_spelling_list(input_dir, results_dir):
         )
     p.style = document.styles["Normal"]
     document.save(filepath)
-    print(end_list)
-
-
-def dir_spellcheck(input_dir, results_dir):
-    # Writes the sentences containing keywords to an existing a word document
-    # with a Level 1 header for the doc name, Level 2 for each searchword
-    # and level 3 for each page that has sentences containing it
-
-    master_list = []
-
-    # Construct the string for the filename + time and its filepath
-    now = datetime.now()
-    dt_string = now.strftime("%Y%m%d_%H%M")
-    project_filename = "Spelling Errors_" + dt_string + ".docx"
-    filepath = results_dir + project_filename
-
-    # Create a list of the txtfile folders from their parent dir
-    subdir_list = [x[0] for x in os.walk(input_dir)]
-    subdir_list.remove(input_dir)
-    filename_list = [x.replace(input_dir, "") for x in subdir_list]
-    subdir_list = [x + "\\" for x in subdir_list]
-    # Reverse it so newer docs get done first
-    subdir_list = subdir_list[::-1]
-
-    # Create the document and write its title
-    document = Document()
-    p = document.add_paragraph("Spellcheck Results")
-    p.style = document.styles["Title"]
-
-    for subdir in subdir_list:
-        misspelled_dict, doc_list = doc_spellcheck(dir_path=subdir)
-        [master_list.append(x) for x in doc_list if x not in master_list]
-
-        filename = filename_list[subdir_list.index(subdir)]
-        filename_para = document.add_paragraph(filename)
-        filename_para.style = document.styles["Heading 1"]
-
-        # Report the search results
-        for page_key, results in misspelled_dict.items():
-            if results == []:
-                continue
-            searchword_header = page_key
-            p = document.add_paragraph(searchword_header)
-            p.style = document.styles["Heading 2"]
-
-            mispelled_word_para = ", ".join(results)
-            try:
-                p = document.add_paragraph(mispelled_word_para)
-            except:
-                p = document.add_paragraph(
-                    "<<Unable to add this paragraph - format conversion error>>"
-                )
-            p.style = document.styles["Normal"]
-
-    print(master_list)
-    document.save(filepath)
-    print("Sentences Extracted to " + project_filename + " in results folder")
+    print("Sentences Extracted to " + project_filename + " in ", end="")
+    print(results_dir)

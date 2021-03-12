@@ -1,2 +1,2 @@
 
-page_spellcheck(txtfile)
+# print(spellcheck_ignore)

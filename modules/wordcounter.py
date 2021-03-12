@@ -1,15 +1,13 @@
 from wordscraper import *
 
 
-def entries_on_page(txtfile, searchwords, searchword_patterns, stop_words=[]):
+def entries_on_page(txtfile, searchwords, reported_searchwords, searchword_patterns, stop_words=[]):
     # Opens a txt file and searches it for keywords, ignoring stopwords.
     # It returns a dictionary with the searchwords as keys and their
     # count as values
 
     # Load the lists from lists module: spellchecks to ignore and text replacements to make_____________________________
     global text_replacements
-
-    global reported_searchwords
 
     # Open the text file - try different encoding formats
     try:
@@ -23,10 +21,6 @@ def entries_on_page(txtfile, searchwords, searchword_patterns, stop_words=[]):
 
     # Clean the text up - remove problem punctuation and enspace numbers adjacent to letters
     text = text_fixer(text)
-
-    # # Remove punctutation that stops word boundary recognition
-    # for correction in text_replacements:
-    #     text = text.replace(correction[0], correction[1])
 
     text = remove_stopwords(text)
 
@@ -51,7 +45,7 @@ def entries_on_page(txtfile, searchwords, searchword_patterns, stop_words=[]):
     return count_dict
 
 
-def entries_in_doc(input_dir, searchwords, searchword_patterns, stop_words=[]):
+def entries_in_doc(input_dir, searchwords, reported_searchwords, searchword_patterns, stop_words=[]):
     # Takes an input directory, assumed filled with single page text files, and
     # returns a dictionary with Filename, page count, and count of each search term
 
@@ -60,8 +54,6 @@ def entries_in_doc(input_dir, searchwords, searchword_patterns, stop_words=[]):
     doc_name = path.name
     filenames = [f for f in listdir(input_dir) if isfile(join(input_dir, f))]
 
-    global reported_searchwords
-
     # Initialise the dictionary and populate it with page counts
     doc_count_dict = {"Document": doc_name, "Pages": len(filenames), "Wordcount": 0}
     for filename in filenames:
@@ -69,6 +61,7 @@ def entries_in_doc(input_dir, searchwords, searchword_patterns, stop_words=[]):
         pagecount_dict = entries_on_page(
             txtfile=filepath,
             searchwords=searchwords,
+            reported_searchwords = reported_searchwords,
             searchword_patterns=searchword_patterns,
             stop_words=stop_words,
         )
@@ -87,10 +80,9 @@ def entries_in_doc(input_dir, searchwords, searchword_patterns, stop_words=[]):
 
 
 def entries_in_dir(
-    input_dir, results_dir, searchwords, stop_words=[], project_name="Results"
+    input_dir, results_dir, searchwords, reported_searchwords, stop_words=[], project_name="Results"
 ):
 
-    global reported_searchwords
 
     # Construct the string for the filename + time and its filepath
     now = datetime.now()
@@ -122,6 +114,7 @@ def entries_in_dir(
         doc_dict = entries_in_doc(
             input_dir=subdir,
             searchwords=searchwords,
+            reported_searchwords = reported_searchwords, 
             searchword_patterns=searchword_patterns,
             stop_words=stop_words,
         )

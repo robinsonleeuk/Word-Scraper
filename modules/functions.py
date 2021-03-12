@@ -116,17 +116,24 @@ def colnum_string(n):
 
 text_replacements = [
     ("-", " "),
-    (":", " :"),
+    (":", " : "),
     ("´", ""),
-    ("“", ""),
+    ("“", " "),
     ("/", " / "),
-    ("‘", ""),
-    ("%", " %"),
-    ("’", ""),
+    ("‘", " "),
+    ("%", " % "),
+    ("’", " "),
     ("‐", " "),
-    ("”", ""),
+    ("”", " "),
     ("g 20", "g20"),
-    ("  ", " "),
+    ("g 7", "g7"),
+    ("***", " "),
+    ("**", " "),
+    ("*", " "),
+    ("·", " "),
+    ("***", " "),
+    ("_", " "),
+    ("‑", ""),
 ]
 
 
@@ -136,9 +143,15 @@ def text_fixer(text):
 
     global text_replacements
 
+    # Add space between letters and adjacent numbers
     text = re.sub(r"([0-9]+(\.[0-9]+)?)", r" \1 ", text).strip()
 
+    # Apply all text replcements from list
     for correction in text_replacements:
         text = text.replace(correction[0], correction[1])
+
+    # Iterate through to delete long whitespaces
+    for i in range(20):
+        text = text.replace("  ", " ")
 
     return text
