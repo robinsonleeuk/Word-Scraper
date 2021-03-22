@@ -127,9 +127,22 @@ def doc_search(
     # and amalgamtes them all into a single dictionary
 
     # Create lists: txtfiles to read, page numbers, and pagenum keys for dictionary
-    filenames = [f for f in listdir(dir_path) if isfile(join(dir_path, f))]
-    page_nums = [f.replace(".txt", "").replace("page_", "") for f in filenames]
+    filenames_unsorted = [f for f in listdir(dir_path) if isfile(join(dir_path, f))]
+    page_nums_unsorted = [
+        f.replace(".txt", "").replace("page_", "") for f in filenames_unsorted
+    ]
+
+    page_ints = [int(p) for p in page_nums_unsorted]
+
+    page_nums = []
+    filenames = []
+    for i in range(1, len(page_ints) + 1):
+        page_nums.append(page_nums_unsorted[page_ints.index(i)])
+        filenames.append(filenames_unsorted[page_ints.index(i)])
+
     page_keys = ["Page " + pn for pn in page_nums]
+
+    # print(filenames)
 
     # Initialize the dictionary that will store results, with 0 totals of each word
     doc_sentences = {}
@@ -138,7 +151,9 @@ def doc_search(
 
     # Iterate through the txtfiles in the dir by pagenumber creating wordcount dictionaries
     # for that page then adding results to the parent document dictionary
+
     for page_num in page_nums:
+
         txtfile = dir_path + filenames[page_nums.index(page_num)]
         page_key = page_keys[page_nums.index(page_num)]
         page_dictionary, ignore_page, end_doc = page_search(
@@ -167,6 +182,7 @@ def doc_search(
         for searchword, value in page_dictionary.items():
             page_list = value[page_key]
             if len(page_list) != 0:
+
                 doc_sentences[searchword][page_key] = page_list
                 doc_sentences[searchword]["Total"] += len(page_list)
 
@@ -192,11 +208,18 @@ def delete_paragraph(paragraph):
 
 
 def write_doc(
-    input_dir, results_dir, searchwords, stop_words=[], project_name="Results"
+    input_dir,
+    results_dir,
+    searchwords,
+    reported_searchwords,
+    stop_words=[],
+    project_name="Results",
 ):
     # Writes the sentences containing keywords to an existing a word document
     # with a Level 1 header for the doc name, Level 2 for each searchword
     # and level 3 for each page that has sentences containing it
+
+    short_results_dir = results_dir.replace(os.getcwd(), "")
 
     # Construct the string for the filename + time and its filepath
     now = datetime.now()
@@ -209,13 +232,21 @@ def write_doc(
     subdir_list.remove(input_dir)
     filename_list = [x.replace(input_dir, "") for x in subdir_list]
     subdir_list = [x + "\\" for x in subdir_list]
-    # Reverse it so newer docs get done first
-    subdir_list = subdir_list[::-1]
+
+    # # Reverse it so newer docs get done first
+    # filename_list = filename_list[::-1]
+    # subdir_list = subdir_list[::-1]
 
     # Create the document and write its title
     document = Document()
     p = document.add_paragraph("Searchword Results")
     p.style = document.styles["Title"]
+
+    p = document.add_paragraph("Searchwords used")
+    p.style = document.styles["Heading 1"]
+
+    p = document.add_paragraph(", ".join(reported_searchwords))
+    p.style = document.styles["Normal"]
 
     # Make regex patterns of searchwords for the doc and page search functions.
     # A list of patterns - just the words surrounded by word boundaries
@@ -224,8 +255,13 @@ def write_doc(
     ]
 
     # a list of patterns - the sentences containing the words
+    # searchsentence_patterns = [
+    #     re.compile(r"[^.]*\b" + w + r"\b[^.]*\.", re.IGNORECASE) for w in searchwords
+    # ]
+
+    # The word surrounded by 20 characters either side
     searchsentence_patterns = [
-        re.compile(r"[^.]*\b" + w + r"\b[^.]*\.", re.IGNORECASE) for w in searchwords
+        re.compile(r".{40}\b" + w + r"\b.{40}", re.IGNORECASE) for w in searchwords
     ]
 
     # For each txtfile folder, create a wordsearch dictionary, a header in the word doc
@@ -234,6 +270,7 @@ def write_doc(
     for subdir in subdir_list:
         total_searchwords_count = 0
         # print("\n", subdir)
+        filename = filename_list[subdir_list.index(subdir)]
         txtfile_dict = doc_search(
             dir_path=subdir,
             searchwords=searchwords,
@@ -247,11 +284,12 @@ def write_doc(
 
         # Report the search results
         for searchword, results in txtfile_dict.items():
+            reported_searchword = reported_searchwords[searchwords.index(searchword)]
             searchword_count = results["Total"]
             if searchword_count == 0:
                 continue
             total_searchwords_count += searchword_count
-            searchword_header = searchword + ": " + str(searchword_count)
+            searchword_header = reported_searchword + ": " + str(searchword_count)
             del txtfile_dict[searchword]["Total"]
             p = document.add_paragraph(searchword_header)
             p.style = document.styles["Heading 2"]
@@ -275,4 +313,4 @@ def write_doc(
             delete_paragraph(filename_para)
 
     document.save(filepath)
-    print("Sentences Extracted to " + project_filename + " in results folder")
+    print("Sentences Extracted to " + project_filename + " in " + short_results_dir)
